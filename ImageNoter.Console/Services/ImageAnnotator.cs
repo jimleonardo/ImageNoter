@@ -1,10 +1,9 @@
-using System;
 using SkiaSharp;
 using ImageNoter.Console.Models;
 
 namespace ImageNoter.Console.Services;
 
-public class ImageProcessor : IDisposable
+public class ImageAnnotator : IDisposable
 {
     private readonly SKTypeface _typeface;
     private const int MinFontSize = 12;
@@ -12,12 +11,12 @@ public class ImageProcessor : IDisposable
     private const int DefaultSidePadding = 20;  // Default padding for left/right sides
     private const float BottomMarginRatio = 0.12f;  // Bottom margin as percentage of line height
 
-    public ImageProcessor()
+    public ImageAnnotator()
     {
         _typeface = SKTypeface.FromFamilyName("Arial");
     }
 
-    public void ProcessImage(string inputPath, string outputPath, ExifData exifData, ImageProcessingOptions options)
+    public void AnnotateImage(string inputPath, string outputPath, ExifData exifData, ImageAnnotationOptions options)
     {
         using var originalBitmap = SKBitmap.Decode(inputPath);
         

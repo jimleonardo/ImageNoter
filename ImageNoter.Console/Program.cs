@@ -33,10 +33,10 @@ public class Program
         AnsiConsole.WriteLine();
         
         AnsiConsole.MarkupLine("[bold]Examples:[/]");
-        AnsiConsole.MarkupLine("  Process all images in the current directory:");
+        AnsiConsole.MarkupLine("  Annotate all images in the current directory:");
         AnsiConsole.MarkupLine("  [grey]ImageNoter.Console --input .[/]");
         AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("  Process images with a full border and custom line height:");
+        AnsiConsole.MarkupLine("  Annotate images with a full border and custom line height:");
         AnsiConsole.MarkupLine("  [grey]ImageNoter.Console --input ./photos --border all --lineheight 80[/]");
     }
 
@@ -61,7 +61,7 @@ public class Program
                 .AddCommandLine(configArgs)
                 .Build();
 
-            var options = new ImageProcessingOptions
+            var options = new ImageAnnotationOptions
             {
                 InputDirectory = config["input"] ?? throw new ArgumentException("Input directory is required"),
                 OutputDirectory = config["output"] ?? Path.Combine(config["input"]!, "images with exif"),
@@ -80,7 +80,7 @@ public class Program
             // Create output directory if it doesn't exist
             Directory.CreateDirectory(options.OutputDirectory);
 
-            var imageProcessor = new ImageProcessor();
+            var imageAnnotator = new ImageAnnotator();
             var exifExtractor = new ExifExtractor();
             var jpgFiles = Directory.GetFiles(options.InputDirectory, "*.jpg", SearchOption.TopDirectoryOnly);
 
@@ -111,7 +111,7 @@ public class Program
                                 $"processed_{fileName}"
                             );
 
-                            imageProcessor.ProcessImage(file, outputPath, exifData, options);
+                            imageAnnotator.AnnotateImage(file, outputPath, exifData, options);
 
                             table.UpdateCell(table.Rows.Count - 1, 1, "[green]Success[/]");
                         }

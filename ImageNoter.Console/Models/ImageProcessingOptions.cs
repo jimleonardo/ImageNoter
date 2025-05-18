@@ -1,6 +1,6 @@
 namespace ImageNoter.Console.Models;
 
-public class ImageProcessingOptions
+public class ImageAnnotationOptions
 {
     public string InputDirectory { get; set; } = string.Empty;
     public string OutputDirectory { get; set; } = string.Empty;

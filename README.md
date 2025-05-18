@@ -42,12 +42,12 @@ ImageNoter.Console --input <input_directory> [options]
 
 ### Examples
 
-Process all images in the current directory with default settings:
+Annotate all images in the current directory with default settings:
 ```bash
 ImageNoter.Console --input .
 ```
 
-Process images with a full border and custom line height:
+Annotate images with a full border and custom line height:
 ```bash
 ImageNoter.Console --input ./photos --border all --lineheight 80
 ```

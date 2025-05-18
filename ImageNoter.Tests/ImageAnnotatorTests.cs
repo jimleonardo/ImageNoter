@@ -8,21 +8,21 @@ using System.Linq;
 
 namespace ImageNoter.Tests;
 
-public class ImageProcessorTests : IDisposable
+public class ImageAnnotatorTests : IDisposable
 {
-    private readonly ImageProcessor _processor;
+    private readonly ImageAnnotator _annotator;
     private readonly string _testImagePath;
     private readonly string _outputImagePath;
 
-    public ImageProcessorTests()
+    public ImageAnnotatorTests()
     {
-        _processor = new ImageProcessor();
+        _annotator = new ImageAnnotator();
         _testImagePath = CreateTestImage();
         _outputImagePath = Path.Combine(Path.GetTempPath(), "output.jpg");
     }
 
     [Fact]
-    public void ProcessImage_WithBottomBorder_CreatesLargerImage()
+    public void AnnotateImage_WithBottomBorder_CreatesLargerImage()
     {
         // Arrange
         var exifData = new ExifData
@@ -33,7 +33,7 @@ public class ImageProcessorTests : IDisposable
             ShutterSpeed = "1/100"
         };
 
-        var options = new ImageProcessingOptions
+        var options = new ImageAnnotationOptions
         {
             BorderStyle = BorderStyle.Bottom,
             LineHeight = 40,
@@ -41,18 +41,18 @@ public class ImageProcessorTests : IDisposable
         };
 
         // Act
-        _processor.ProcessImage(_testImagePath, _outputImagePath, exifData, options);
+        _annotator.AnnotateImage(_testImagePath, _outputImagePath, exifData, options);
 
         // Assert
         using var originalImage = SKBitmap.Decode(_testImagePath);
-        using var processedImage = SKBitmap.Decode(_outputImagePath);
+        using var annotatedImage = SKBitmap.Decode(_outputImagePath);
         
-        Assert.True(processedImage.Height > originalImage.Height);
-        Assert.Equal(originalImage.Width, processedImage.Width);
+        Assert.True(annotatedImage.Height > originalImage.Height);
+        Assert.Equal(originalImage.Width, annotatedImage.Width);
     }
 
     [Fact]
-    public void ProcessImage_WithAllBorder_CreatesLargerImageInBothDimensions()
+    public void AnnotateImage_WithAllBorder_CreatesLargerImageInBothDimensions()
     {
         // Arrange
         var exifData = new ExifData
@@ -63,7 +63,7 @@ public class ImageProcessorTests : IDisposable
             ShutterSpeed = "1/100"
         };
 
-        var options = new ImageProcessingOptions
+        var options = new ImageAnnotationOptions
         {
             BorderStyle = BorderStyle.All,
             LineHeight = 40,
@@ -71,14 +71,14 @@ public class ImageProcessorTests : IDisposable
         };
 
         // Act
-        _processor.ProcessImage(_testImagePath, _outputImagePath, exifData, options);
+        _annotator.AnnotateImage(_testImagePath, _outputImagePath, exifData, options);
 
         // Assert
         using var originalImage = SKBitmap.Decode(_testImagePath);
-        using var processedImage = SKBitmap.Decode(_outputImagePath);
+        using var annotatedImage = SKBitmap.Decode(_outputImagePath);
         
-        Assert.True(processedImage.Height > originalImage.Height);
-        Assert.True(processedImage.Width > originalImage.Width);
+        Assert.True(annotatedImage.Height > originalImage.Height);
+        Assert.True(annotatedImage.Width > originalImage.Width);
     }
 
     [Theory]
@@ -86,7 +86,7 @@ public class ImageProcessorTests : IDisposable
     [InlineData(50)]  // Medium quality
     [InlineData(75)]  // High quality
     [InlineData(100)] // Maximum quality
-    public void ProcessImage_WithQualitySettings_SavesWithCorrectQuality(int quality)
+    public void AnnotateImage_WithQualitySettings_SavesWithCorrectQuality(int quality)
     {
         // Arrange
         var exifData = new ExifData
@@ -96,7 +96,7 @@ public class ImageProcessorTests : IDisposable
             Aperture = "f/2.8"
         };
 
-        var options = new ImageProcessingOptions
+        var options = new ImageAnnotationOptions
         {
             BorderStyle = BorderStyle.All,
             LineHeight = 40,
@@ -107,7 +107,7 @@ public class ImageProcessorTests : IDisposable
         try
         {
             // Act
-            _processor.ProcessImage(testImagePath, _outputImagePath, exifData, options);
+            _annotator.AnnotateImage(testImagePath, _outputImagePath, exifData, options);
 
             // Assert
             var outputData = File.ReadAllBytes(_outputImagePath);
@@ -140,7 +140,7 @@ public class ImageProcessorTests : IDisposable
     }
 
     [Fact]
-    public void ProcessImage_WithBottomBorder_HasCorrectMarginRatio()
+    public void AnnotateImage_WithBottomBorder_HasCorrectMarginRatio()
     {
         // Arrange
         var lineHeight = 50; // Use a line height that makes percentage calculation clear
@@ -153,7 +153,7 @@ public class ImageProcessorTests : IDisposable
             Aperture = "f/2.8"
         };
 
-        var options = new ImageProcessingOptions
+        var options = new ImageAnnotationOptions
         {
             BorderStyle = BorderStyle.Bottom,
             LineHeight = lineHeight,
@@ -165,10 +165,10 @@ public class ImageProcessorTests : IDisposable
         try
         {
             // Act
-            _processor.ProcessImage(testImagePath, _outputImagePath, exifData, options);
+            _annotator.AnnotateImage(testImagePath, _outputImagePath, exifData, options);
 
             // Assert
-            using var processedImage = SKBitmap.Decode(_outputImagePath);
+            using var annotatedImage = SKBitmap.Decode(_outputImagePath);
             
             // Get the original image height (should be the same as our test image)
             using var originalImage = SKBitmap.Decode(testImagePath);
@@ -186,7 +186,7 @@ public class ImageProcessorTests : IDisposable
 
             // Check that pixels in the text area are black (background color)
             var textAreaY = textAreaStart + 10; // Check middle of text area
-            Assert.Equal(SKColors.Black, processedImage.GetPixel(10, textAreaY));
+            Assert.Equal(SKColors.Black, annotatedImage.GetPixel(10, textAreaY));
 
             // Check that the bottom margin has the correct height
             var bottomMarginStart = textAreaEnd;
@@ -195,14 +195,14 @@ public class ImageProcessorTests : IDisposable
             // Verify the margin is black (background color)
             for (int y = bottomMarginStart; y < bottomMarginEnd; y++)
             {
-                Assert.Equal(SKColors.Black, processedImage.GetPixel(10, y));
+                Assert.Equal(SKColors.Black, annotatedImage.GetPixel(10, y));
             }
 
             // Verify we're at the end of the image
-            Assert.Equal(bottomMarginEnd, processedImage.Height);
+            Assert.Equal(bottomMarginEnd, annotatedImage.Height);
 
             // Verify the margin size is exactly 12% of line height
-            var actualMarginHeight = processedImage.Height - textAreaEnd;
+            var actualMarginHeight = annotatedImage.Height - textAreaEnd;
             Assert.Equal(expectedBottomMargin, actualMarginHeight);
         }
         finally
@@ -215,7 +215,7 @@ public class ImageProcessorTests : IDisposable
     }
 
     [Fact]
-    public void ProcessImage_WithAllBorder_HasCorrectBorderSizes()
+    public void AnnotateImage_WithAllBorder_HasCorrectBorderSizes()
     {
         // Arrange
         var lineHeight = 50; // Use a line height that makes calculations clear
@@ -228,7 +228,7 @@ public class ImageProcessorTests : IDisposable
             Aperture = "f/2.8"
         };
 
-        var options = new ImageProcessingOptions
+        var options = new ImageAnnotationOptions
         {
             BorderStyle = BorderStyle.All,
             LineHeight = lineHeight,
@@ -240,10 +240,10 @@ public class ImageProcessorTests : IDisposable
         try
         {
             // Act
-            _processor.ProcessImage(testImagePath, _outputImagePath, exifData, options);
+            _annotator.AnnotateImage(testImagePath, _outputImagePath, exifData, options);
 
             // Assert
-            using var processedImage = SKBitmap.Decode(_outputImagePath);
+            using var annotatedImage = SKBitmap.Decode(_outputImagePath);
             using var originalImage = SKBitmap.Decode(testImagePath);
 
             // Calculate expected dimensions
@@ -255,7 +255,7 @@ public class ImageProcessorTests : IDisposable
             // Verify total width includes line height borders on both sides
             var expectedTotalWidth = lineHeight * 2 + // Left and right borders
                                    originalImage.Width; // Original image width
-            Assert.Equal(expectedTotalWidth, processedImage.Width);
+            Assert.Equal(expectedTotalWidth, annotatedImage.Width);
 
             // Verify total height includes all components
             var expectedTotalHeight = lineHeight + // Top border
@@ -263,7 +263,7 @@ public class ImageProcessorTests : IDisposable
                                     lineHeight + // Padding before text
                                     expectedTextAreaHeight + // Text area
                                     expectedBottomMargin; // Bottom margin
-            Assert.Equal(expectedTotalHeight, processedImage.Height);
+            Assert.Equal(expectedTotalHeight, annotatedImage.Height);
 
             // Verify the image area dimensions
             var imageArea = new SKRectI(
@@ -276,13 +276,13 @@ public class ImageProcessorTests : IDisposable
             // Verify text area position
             var textAreaY = imageArea.Bottom + lineHeight; // After image + padding
             var textAreaHeight = expectedTextAreaHeight;
-            Assert.True(textAreaY + textAreaHeight + expectedBottomMargin == processedImage.Height,
+            Assert.True(textAreaY + textAreaHeight + expectedBottomMargin == annotatedImage.Height,
                 "Text area should extend to the bottom margin");
 
             // Verify border dimensions
             Assert.True(imageArea.Left == lineHeight,
                 "Left border should equal line height");
-            Assert.True(processedImage.Width - imageArea.Right == lineHeight,
+            Assert.True(annotatedImage.Width - imageArea.Right == lineHeight,
                 "Right border should equal line height");
             Assert.True(imageArea.Top == lineHeight,
                 "Top border should equal line height");
@@ -297,7 +297,7 @@ public class ImageProcessorTests : IDisposable
     }
 
     [Fact]
-    public void ProcessImage_WithAllBorder_HasCenteredText()
+    public void AnnotateImage_WithAllBorder_HasCenteredText()
     {
         // Arrange
         var lineHeight = 50;
@@ -308,7 +308,7 @@ public class ImageProcessorTests : IDisposable
             Aperture = "f/2.8"     // Even shorter
         };
 
-        var options = new ImageProcessingOptions
+        var options = new ImageAnnotationOptions
         {
             BorderStyle = BorderStyle.All,
             LineHeight = lineHeight,
@@ -319,14 +319,14 @@ public class ImageProcessorTests : IDisposable
         try
         {
             // Act
-            _processor.ProcessImage(testImagePath, _outputImagePath, exifData, options);
+            _annotator.AnnotateImage(testImagePath, _outputImagePath, exifData, options);
 
             // Assert
-            using var processedImage = SKBitmap.Decode(_outputImagePath);
+            using var annotatedImage = SKBitmap.Decode(_outputImagePath);
             using var originalImage = SKBitmap.Decode(testImagePath);
 
             // Calculate available width for text (total width minus borders)
-            var textAreaWidth = processedImage.Width - (lineHeight * 2);
+            var textAreaWidth = annotatedImage.Width - (lineHeight * 2);
 
             // Calculate expected text positions
             using var paint = new SKPaint { Typeface = SKTypeface.FromFamilyName("Arial") };
@@ -481,7 +481,7 @@ public class ImageProcessorTests : IDisposable
 
     public void Dispose()
     {
-        _processor.Dispose();
+        _annotator.Dispose();
         if (File.Exists(_testImagePath))
         {
             File.Delete(_testImagePath);
